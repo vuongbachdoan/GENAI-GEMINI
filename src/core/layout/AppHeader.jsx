@@ -5,7 +5,7 @@ import Bard from '../../assets/images/logo-bard.png';
 export const AppHeader = () => {
     return (
         <>
-            <Flex paddingX={3} height='80px' background='#212121' alignItems='center'>
+            <Flex paddingX={3} marginX={3} height='80px' background='#212121' alignItems='center'>
                 <Image src={Logo} height='40px' borderRadius={15}/>
                 <Spacer />
                 <Flex

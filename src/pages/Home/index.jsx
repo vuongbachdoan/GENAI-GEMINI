@@ -1,5 +1,5 @@
 import React from 'react';
-import { Avatar, Box, Button, Flex, Image, Input, Link, Text, VStack, useColorModeValue } from '@chakra-ui/react';
+import { Avatar, Box, Button, Flex, Image, Input, Link, List, ListItem, Text, Textarea, VStack, useColorModeValue } from '@chakra-ui/react';
 import { AppLayout } from '../../core/layout/AppLayout';
 import { AppSidebar } from '../../core/layout/AppSidebar';
 import { RiSendPlaneFill } from "react-icons/ri";
@@ -13,15 +13,20 @@ export const Home = () => {
     const [question, setQuestion] = React.useState('');
     const [historyMessages, setHistoryMessages] = React.useState([])
     const messageContainerRef = React.useRef(null);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [isShiftPressed, setIsShiftPressed] = React.useState(false);
+    const [isEnterPressed, setIsEnterPressed] = React.useState(false);
 
     React.useEffect(() => {
         if (messageContainerRef.current) {
             messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
         }
     }, [historyMessages]);
-    
+
 
     const askQuestion = () => {
+        setQuestion('');
+        setIsLoading(true);
         setHistoryMessages([
             ...historyMessages,
             {
@@ -34,7 +39,6 @@ export const Home = () => {
                 (result) => {
                     const response = result.response;
                     console.log(response)
-                    setQuestion('')
                     setHistoryMessages([
                         ...historyMessages,
                         {
@@ -47,8 +51,12 @@ export const Home = () => {
                             refs: response.candidates[0].citationMetadata?.citationSources ?? []
                         }
                     ]);
+                    setIsLoading(false);
                 }
             )
+            .catch(() => {
+                setIsLoading(false);
+            })
     }
 
     return (
@@ -92,7 +100,7 @@ export const Home = () => {
                             rowGap={15}
                         >
                             <Flex
-                                ref={messageContainerRef} 
+                                ref={messageContainerRef}
                                 flex={1}
                                 flexDirection='column'
                                 rowGap={5}
@@ -107,11 +115,15 @@ export const Home = () => {
                                                     <Image src={Bard} width={35} height={35} />
                                                     <Text textAlign='left' fontSize='small' color='#e3e3e3'>
                                                         <Markdown components={ChakraUIRenderer()} children={message.content} skipHtml />
-                                                        {
-                                                            message.refs.map((ref) => (
-                                                                <Link href={ref.uri}>{ref.uri} {ref.license ? `[${ref.license}]` : ''}</Link>
-                                                            ))
-                                                        }
+                                                        <List>
+                                                            {
+                                                                message.refs.map((ref) => (
+                                                                    <ListItem>
+                                                                        <Link color='palegreen' href={ref.uri}>{ref.uri} {ref.license ? `[${ref.license}]` : ''}</Link>
+                                                                    </ListItem>
+                                                                ))
+                                                            }
+                                                        </List>
                                                     </Text>
                                                 </Flex>
                                             );
@@ -127,12 +139,41 @@ export const Home = () => {
                                     })
                                 }
                             </Flex>
+
                             <Flex>
-                                <Input value={question} onKeyDown={(key) => {
-                                    if(key.code == 'Enter') {
-                                        askQuestion()
-                                    }
-                                }}  placeholder='Enter content here' color='#e3e3e3' borderRadius={8} fontSize='small' onChange={(e) => setQuestion(e.target.value)} />
+                                <Textarea
+                                    value={question}
+                                    onKeyDown={(e) => {
+                                        if(e.key === 'Enter') {
+                                            setIsEnterPressed(true)
+                                        }
+                                        if(e.key === 'Shift') {
+                                            setIsShiftPressed(true)
+                                        }
+                                    }}
+                                    onKeyUp={(e) => {
+                                        if(e.key === 'Enter') {
+                                            setIsEnterPressed(false)
+                                        }
+                                        if(e.key === 'Shift') {
+                                            setIsShiftPressed(false)
+                                        }
+                                    }}
+                                    onChange={(e) => {
+                                        if(isEnterPressed && isShiftPressed) {
+                                            setQuestion(question + '\n')
+                                        } else if (isEnterPressed && !isShiftPressed) {
+                                            askQuestion()
+                                        } else {
+                                            setQuestion(e.target.value)
+                                        }
+                                    }}
+                                    placeholder="Enter content here"
+                                    color="#e3e3e3"
+                                    borderRadius={8}
+                                    fontSize="small"
+                                />
+
                                 <Flex
                                     alignItems='center'
                                     justifyContent='center'
